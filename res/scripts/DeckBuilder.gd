@@ -2,9 +2,9 @@ extends Control
 
 const CARD_LIST_ITEM := preload("res://scenes/ui/CardListItem.tscn")
 const DECK_SLOT_SCENE := preload("res://scenes/ui/DeckSlot.tscn")
-const DeckManager := preload("res://scripts/DeckManager.gd")
-const CardRepository := preload("res://scripts/CardRepository.gd")
-const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
+const DeckManager := preload("res://res/scripts/DeckManager.gd")
+const CardRepository := preload("res://res/scripts/CardRepository.gd")
+const PlayerProfile := preload("res://res/scripts/PlayerProfile.gd")
 
 @export var squad_size: int = 5
 
@@ -36,8 +36,8 @@ const SUCCESS_COLOR := Color(0.4, 0.85, 0.5)
 
 var _repository := CardRepository.new()
 var _deck_slots: Array = []
-var _current_deck: Array = []
-var _all_cards: Array = []
+var _current_deck: Array[Dictionary] = []
+var _all_cards: Array[Dictionary] = []
 
 const FILTER_ALL := "__all__"
 
@@ -77,7 +77,7 @@ func _populate_card_list() -> void:
     _all_cards = PlayerProfile.get_owned_cards()
     if _all_cards.is_empty():
         _all_cards = _repository.get_all_cards()
-    _all_cards.sort_custom(self, "_sort_cards")
+    _all_cards.sort_custom(Callable(self, "_sort_cards"))
     _build_filter_options()
     for card in _filter_cards():
         var item := CARD_LIST_ITEM.instantiate()
@@ -151,7 +151,7 @@ func _refresh_validation() -> void:
     _update_squad_overview()
 
 func _on_save_pressed() -> void:
-    var sanitized := []
+    var sanitized: Array[Dictionary] = []
     for card in _current_deck:
         sanitized.append(card.duplicate(true) if card is Dictionary else {})
     DeckManager.set_selected_deck(sanitized)
@@ -231,7 +231,7 @@ func _build_filter_options() -> void:
 func _filter_cards() -> Array:
     if _all_cards.is_empty():
         return []
-    var result: Array = []
+    var result: Array[Dictionary] = []
     var search_text := _search_line.text.strip_edges().to_lower()
     var position_filter := _get_selected_filter(_position_filter)
     var rarity_filter := _get_selected_filter(_rarity_filter)
@@ -274,7 +274,7 @@ func _update_library_count() -> void:
     var total_cards := 0
     for card in _filter_cards():
         total_cards += int(card.get("owned_copies", 1))
-    var suffix := unique == 1 ? "" : "s"
+    var suffix := "" if unique == 1 else "s"
     _library_count.text = "%d card%s (%d owned)" % [unique, suffix, total_cards]
 
 func _update_squad_overview() -> void:

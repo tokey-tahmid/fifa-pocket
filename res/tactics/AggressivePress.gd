@@ -6,8 +6,8 @@ func _init() -> void:
     energy_cost = 3
 
 func apply(self_card: Dictionary, opponent_card: Dictionary) -> Dictionary:
-    var pressure_bonus := clamp(int(self_card.get("pace", 0) / 8), 1, 6)
-    var fatigue_penalty := 2
+    var pressure_bonus: int = clampi(int(self_card.get("pace", 0) / 8), 1, 6)
+    var fatigue_penalty: int = 2
     return {
         "self_modifiers": {
             "attack": pressure_bonus + 6,

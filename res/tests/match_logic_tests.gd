@@ -1,7 +1,7 @@
 extends Node
 
-const MatchController := preload("res://scripts/MatchController.gd")
-const Tactic := preload("res://tactics/BaseTactic.gd")
+const MatchController := preload("res://res/scripts/MatchController.gd")
+const Tactic := preload("res://res/tactics/BaseTactic.gd")
 
 class MockTactic extends Tactic:
     var _self_modifiers: Dictionary
@@ -37,7 +37,7 @@ func _create_card(name: String, attack: int, defense: int, pace: int, control: i
     }
 
 func test_stronger_card_scores_three_points() -> void:
-    var controller := MatchController.new()
+    var controller: MatchController = MatchController.new()
     var striker := _create_card("Star Striker", 90, 82, 88, 76)
     var defender := _create_card("Reserve Defender", 40, 35, 30, 28)
     var result := controller._calculate_round_result(striker, defender, null, null)
@@ -45,7 +45,7 @@ func test_stronger_card_scores_three_points() -> void:
     assert(result.get("opponent_score", 0) == 0)
 
 func test_tactic_modifiers_shift_advantage() -> void:
-    var controller := MatchController.new()
+    var controller: MatchController = MatchController.new()
     var balanced := _create_card("Balanced Mid", 70, 70, 70, 70)
     var disruptor := _create_card("Disruptor", 72, 68, 72, 68)
     var counter_tactic := MockTactic.new("High Press", {"attack": 5, "pace": 4}, {"control": -6})
@@ -54,7 +54,7 @@ func test_tactic_modifiers_shift_advantage() -> void:
     assert(result.get("player_score", 0) > result.get("opponent_score", 0))
 
 func test_score_card_accounts_for_modifiers() -> void:
-    var controller := MatchController.new()
+    var controller: MatchController = MatchController.new()
     var base_card := _create_card("Playmaker", 60, 65, 62, 80)
     var modified := controller._apply_card_modifiers(base_card, {"attack": 10, "defense": -5, "control": 5})
     var base_score := controller._score_card(base_card)

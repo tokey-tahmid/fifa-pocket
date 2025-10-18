@@ -118,10 +118,11 @@ func _resolve_stream(source) -> AudioStream:
     return null
 
 func _ensure_buses_exist() -> void:
-    var audio_server := AudioServer
-    if !audio_server.has_bus(music_bus):
-        audio_server.add_bus(audio_server.get_bus_count())
-        audio_server.set_bus_name(audio_server.get_bus_count() - 1, music_bus)
-    if !audio_server.has_bus(sfx_bus):
-        audio_server.add_bus(audio_server.get_bus_count())
-        audio_server.set_bus_name(audio_server.get_bus_count() - 1, sfx_bus)
+    _ensure_bus(music_bus)
+    _ensure_bus(sfx_bus)
+
+func _ensure_bus(bus_name: StringName) -> void:
+    if AudioServer.get_bus_index(bus_name) != -1:
+        return
+    AudioServer.add_bus(AudioServer.get_bus_count())
+    AudioServer.set_bus_name(AudioServer.get_bus_count() - 1, bus_name)

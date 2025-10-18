@@ -45,6 +45,9 @@ enum Phase {
 @onready var _summary_panel: Panel = $UI/HUD/MainVBox/SummaryPanel
 @onready var _summary_label: RichTextLabel = $UI/HUD/MainVBox/SummaryPanel/SummaryLabel
 @onready var _match_end_dialog: MatchEndDialog = $UI/MatchEndDialog
+@onready var _audio: AudioManager = $AudioManager
+@onready var _goal_burst: GPUParticles2D = $Celebrations/GoalBurst
+@onready var _opponent_burst: GPUParticles2D = $Celebrations/OpponentBurst
 
 var _current_phase: Phase = Phase.DRAW
 var _current_round: int = 1
@@ -74,6 +77,8 @@ var _opponent_tactics_used: int = 0
 var _player_energy_spent_total: float = 0.0
 var _opponent_energy_spent_total: float = 0.0
 var _rounds_played: int = 0
+var _summary_tween: Tween = null
+var _score_pulse_tweens: Dictionary = {}
 
 func _ready() -> void:
     _rng.randomize()
@@ -86,8 +91,10 @@ func _ready() -> void:
         ai_debug_logging = _ai_brain.debug_enabled
     _phase_timer.timeout.connect(_on_phase_timer_timeout)
     _announcement_timer.timeout.connect(_on_announcement_timer_timeout)
+    size_changed.connect(_on_match_resized)
     _load_tactics()
     _prepare_default_decks()
+    _on_match_resized()
     start_match()
     _show_match_tutorial_if_needed()
 
@@ -113,15 +120,21 @@ func start_match() -> void:
     _opponent_selected_tactic = null
     _player_selected_card = {}
     _opponent_selected_card = {}
-    _summary_panel.visible = false
     _summary_label.text = ""
+    _hide_summary_panel(true)
     _clear_hand_ui()
     _update_scoreboard()
     _update_energy_display()
     _update_phase_label("Draw Phase")
     if _match_end_dialog:
         _match_end_dialog.hide()
+    if _goal_burst:
+        _goal_burst.emitting = false
+    if _opponent_burst:
+        _opponent_burst.emitting = false
     _start_phase(Phase.DRAW)
+    if _audio:
+        _audio.play_bgm(&"match", true)
 
 func _prepare_default_decks() -> void:
     if _player_deck.is_empty():
@@ -179,6 +192,7 @@ func _begin_draw_phase() -> void:
     _build_opponent_hand_ui()
     _update_player_hand_ui()
     _update_opponent_hand_ui()
+    _hide_summary_panel()
     _phase_timer.start(draw_duration)
 
 func _begin_tactic_phase() -> void:
@@ -194,11 +208,17 @@ func _begin_resolution_phase() -> void:
         _player_selected_tactic,
         _opponent_selected_tactic
     )
-    _player_score += int(result["player_score"])
-    _opponent_score += int(result["opponent_score"])
+    var player_delta := int(result.get("player_score", 0))
+    var opponent_delta := int(result.get("opponent_score", 0))
+    _player_score += player_delta
+    _opponent_score += opponent_delta
     _update_scoreboard()
-    _summary_label.text = result["summary"]
-    _summary_panel.visible = true
+    if player_delta > 0:
+        _pulse_score_label(_player_score_label)
+    if opponent_delta > 0:
+        _pulse_score_label(_opponent_score_label)
+    _trigger_goal_celebration(player_delta, opponent_delta)
+    _show_summary_text(result.get("summary", ""))
     _record_round_stats(result)
     _phase_timer.start(resolution_duration)
 
@@ -207,7 +227,7 @@ func _begin_cleanup_phase() -> void:
     _player_hand.clear()
     _opponent_hand.clear()
     _clear_hand_ui()
-    _summary_panel.visible = false
+    _hide_summary_panel()
     _phase_timer.start(cleanup_duration)
 
 func _complete_match() -> void:
@@ -224,10 +244,11 @@ func _complete_match() -> void:
     var summary := "[center][b]Match Complete[/b][/center]\n"
     summary += "[center]Player %d - %d Opponent[/center]\n" % [_player_score, _opponent_score]
     summary += "[center]%s[/center]" % verdict
-    _summary_label.text = summary
-    _summary_panel.visible = true
+    _show_summary_text(summary)
     _announce_phase("Match Complete")
     _show_match_end_dialog(verdict)
+    if _audio:
+        _audio.stop_bgm()
 
 func _advance_phase() -> void:
     match _current_phase:
@@ -282,12 +303,18 @@ func _set_player_selection(index: int, tactic: Tactic) -> bool:
     var available_energy := min(player_energy_max, _player_energy + previous_cost)
     if tactic and tactic.energy_cost > available_energy:
         return false
+    var previous_index := _player_selected_card_index
+    var previous_tactic := _player_selected_tactic
     _player_energy = available_energy - (tactic.energy_cost if tactic else 0)
     _player_selected_card = _player_hand[index]
     _player_selected_card_index = index
     _player_selected_tactic = tactic
     _update_player_hand_ui()
     _update_energy_display()
+    if previous_index != index or previous_tactic != tactic:
+        _trigger_player_card_feedback(index)
+        if _audio:
+            _audio.play_sfx(&"card_play")
     return true
 
 func _select_ai_tactic() -> Dictionary:
@@ -633,10 +660,14 @@ func _empty_card(name: String) -> Dictionary:
 func _announce_phase(text: String) -> void:
     _announcement_label.text = text
     _announcement_label.modulate = Color(1, 1, 1, 0)
+    _announcement_label.scale = Vector2(0.9, 0.9)
     var fade_in := create_tween()
     fade_in.tween_property(_announcement_label, "modulate:a", 1.0, 0.35).set_ease(Tween.EASE_OUT)
+    fade_in.parallel().tween_property(_announcement_label, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
     _announcement_timer.start(1.5)
     _update_phase_label(text)
+    if _audio:
+        _audio.play_sfx(&"ui_transition")
 
 func _update_phase_label(text: String) -> void:
     _phase_label.text = text
@@ -703,5 +734,78 @@ func _calculate_rewards() -> Dictionary:
 
 func _show_match_tutorial_if_needed() -> void:
     if PlayerProfile.consume_tutorial("match_flow"):
-        _summary_label.text = "[center][b]Match Tips[/b][/center]\nSelect a card from your hand and pair it with a tactic before the timer expires. Win rounds to earn coins and card rewards!"
-        _summary_panel.visible = true
+        _show_summary_text("[center][b]Match Tips[/b][/center]\nSelect a card from your hand and pair it with a tactic before the timer expires. Win rounds to earn coins and card rewards!", false)
+
+func _trigger_player_card_feedback(index: int) -> void:
+    for child in _player_hand_list.get_children():
+        if !child.has_method("get_card_index"):
+            continue
+        if child.get_card_index() != index:
+            continue
+        if child.has_method("play_selection_feedback"):
+            child.play_selection_feedback()
+        break
+
+func _trigger_goal_celebration(player_delta: int, opponent_delta: int) -> void:
+    if player_delta == opponent_delta:
+        return
+    var emitter: GPUParticles2D = player_delta > opponent_delta ? _goal_burst : _opponent_burst
+    if emitter:
+        emitter.restart()
+        emitter.emitting = true
+    if _audio and player_delta > opponent_delta:
+        _audio.play_sfx(&"goal_cheer")
+
+func _pulse_score_label(label: Control) -> void:
+    if label == null:
+        return
+    var key := label.get_instance_id()
+    if _score_pulse_tweens.has(key):
+        var existing: Tween = _score_pulse_tweens[key]
+        if existing and existing.is_running():
+            existing.kill()
+    var tween := create_tween()
+    tween.set_trans(Tween.TRANS_BACK)
+    tween.set_ease(Tween.EASE_OUT)
+    tween.tween_property(label, "scale", Vector2(1.2, 1.2), 0.2)
+    tween.tween_property(label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    _score_pulse_tweens[key] = tween
+
+func _show_summary_text(text: String, animate: bool = true) -> void:
+    if _summary_tween and _summary_tween.is_running():
+        _summary_tween.kill()
+    _summary_label.text = text
+    _summary_panel.show()
+    if animate:
+        _summary_panel.modulate = Color(1, 1, 1, 0)
+        _summary_tween = create_tween()
+        _summary_tween.tween_property(_summary_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+    else:
+        _summary_panel.modulate = Color(1, 1, 1, 1)
+    if _audio and animate:
+        _audio.play_sfx(&"ui_transition")
+
+func _hide_summary_panel(immediate: bool = false) -> void:
+    if !_summary_panel.visible:
+        return
+    if immediate:
+        if _summary_tween and _summary_tween.is_running():
+            _summary_tween.kill()
+        _summary_panel.hide()
+        _summary_panel.modulate = Color(1, 1, 1, 1)
+        return
+    if _summary_tween and _summary_tween.is_running():
+        _summary_tween.kill()
+    _summary_tween = create_tween()
+    _summary_tween.tween_property(_summary_panel, "modulate:a", 0.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+    _summary_tween.tween_callback(Callable(_summary_panel, "hide"))
+
+func _on_match_resized() -> void:
+    _update_celebration_positions()
+
+func _update_celebration_positions() -> void:
+    var viewport_size := get_viewport_rect().size
+    if _goal_burst:
+        _goal_burst.position = viewport_size * 0.5
+    if _opponent_burst:
+        _opponent_burst.position = viewport_size * 0.5

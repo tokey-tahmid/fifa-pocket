@@ -8,3 +8,13 @@ config/name="fifa-pocket"
 aggressiveness=0.65
 randomness=0.2
 debug_logging=false
+
+[rendering]
+renderer/rendering_method="forward_mobile"
+textures/vram_compression/import_etc2_astc=true
+textures/default_filters/use_mipmaps=true
+textures/default_filters/use_anisotropic=true
+textures/texture_size_limit=2048
+
+[rendering/2d]
+options/use_2d_batcher=true

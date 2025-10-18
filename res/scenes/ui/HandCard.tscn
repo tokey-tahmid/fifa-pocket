@@ -1,7 +1,20 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/HandCard.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/CardWidget.tscn" id="2"]
+
+[sub_resource type="Gradient" id="1"]
+colors = PackedColorArray(1, 0.94902, 0.627451, 1, 1, 0.670588, 0.113725, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="2"]
+emission_shape = 2
+emission_box_extents = Vector3(160, 80, 0)
+gravity = Vector3(0, 120, 0)
+initial_velocity_min = 140.0
+initial_velocity_max = 220.0
+direction = Vector3(0, -1, 0)
+spread = 180.0
+color_ramp = SubResource("1")
 
 [node name="HandCard" type="PanelContainer"]
 custom_minimum_size = Vector2(420, 240)
@@ -56,6 +69,15 @@ text = "Double click the card to flip"
 horizontal_alignment = 1
 self_modulate = Color(0.8, 0.8, 0.8, 1)
 custom_minimum_size = Vector2(0, 22)
+
+[node name="SelectionBurst" type="GPUParticles2D" parent="."]
+emitting = false
+position = Vector2(210, 120)
+amount = 64
+lifetime = 0.8
+one_shot = true
+explosiveness = 0.55
+process_material = SubResource("2")
 
 [connection signal="item_selected" from="HBoxContainer/ControlPanel/TacticSelector" to="." method="_on_TacticSelector_item_selected"]
 [connection signal="pressed" from="HBoxContainer/ControlPanel/PlayButton" to="." method="_on_PlayButton_pressed"]

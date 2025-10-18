@@ -25,7 +25,7 @@ const RARITY_WEIGHTS := {
     "common": 40
 }
 
-const CardRepository := preload("res://scripts/CardRepository.gd")
+const CardRepository := preload("res://res/scripts/CardRepository.gd")
 
 static var _profile: Dictionary = {}
 static var _repository: CardRepository = CardRepository.new()
@@ -41,35 +41,36 @@ static func ensure_initialized() -> void:
 
 static func get_coin_balance() -> int:
     ensure_initialized()
-    return int(_profile.get(SECTION_CORE, {}).get("coins", 0))
+    var core: Dictionary = _profile.get(SECTION_CORE, {})
+    return int(core.get("coins", 0))
 
 static func add_coins(amount: int) -> int:
     ensure_initialized()
     if amount <= 0:
         return get_coin_balance()
-    var core := _profile.get(SECTION_CORE, {})
+    var core: Dictionary = _profile.get(SECTION_CORE, {})
     var coins := int(core.get("coins", 0)) + amount
     core["coins"] = coins
     _profile[SECTION_CORE] = core
     _save_profile()
     return coins
 
-static func get_owned_cards() -> Array:
+static func get_owned_cards() -> Array[Dictionary]:
     ensure_initialized()
     var inventory: Dictionary = _profile.get(SECTION_INVENTORY, {})
     if inventory.is_empty():
         return []
     var ids := inventory.keys()
     var cards := _repository.get_cards_by_ids(ids)
-    var cards_by_id := {}
+    var cards_by_id: Dictionary = {}
     for card in cards:
         var card_id := _get_card_id(card)
         cards_by_id[card_id] = card
-    var result: Array = []
+    var result: Array[Dictionary] = []
     for card_id in ids:
         if !cards_by_id.has(card_id):
             continue
-        var card := cards_by_id[card_id].duplicate(true)
+        var card: Dictionary = cards_by_id[card_id].duplicate(true)
         card["owned_copies"] = int(inventory.get(card_id, 0))
         result.append(card)
     result.sort_custom(func(a, b):
@@ -85,9 +86,9 @@ static func get_card_count(card_id: String) -> int:
     ensure_initialized()
     return int(_profile.get(SECTION_INVENTORY, {}).get(card_id, 0))
 
-static func grant_cards(card_ids: Array) -> Array:
+static func grant_cards(card_ids: Array) -> Array[Dictionary]:
     ensure_initialized()
-    var added_cards: Array = []
+    var added_cards: Array[Dictionary] = []
     if card_ids.is_empty():
         return added_cards
     var inventory: Dictionary = _profile.get(SECTION_INVENTORY, {}).duplicate(true)
@@ -96,7 +97,7 @@ static func grant_cards(card_ids: Array) -> Array:
         if card_id == "":
             continue
         inventory[card_id] = int(inventory.get(card_id, 0)) + 1
-        var card := _repository.get_card_by_id(card_id)
+        var card: Dictionary = _repository.get_card_by_id(card_id)
         if !card.is_empty():
             card["owned_copies"] = int(inventory[card_id])
             added_cards.append(card)
@@ -104,7 +105,7 @@ static func grant_cards(card_ids: Array) -> Array:
     _save_profile()
     return added_cards
 
-static func get_active_deck_cards() -> Array:
+static func get_active_deck_cards() -> Array[Dictionary]:
     ensure_initialized()
     var deck_ids: Array = _profile.get(SECTION_DECKS, {}).get("active", [])
     if deck_ids.is_empty():
@@ -113,7 +114,7 @@ static func get_active_deck_cards() -> Array:
 
 static func set_active_deck(card_ids: Array) -> void:
     ensure_initialized()
-    var sanitized: Array = []
+    var sanitized: Array[String] = []
     for raw_id in card_ids:
         var card_id := String(raw_id)
         if card_id == "":
@@ -122,14 +123,14 @@ static func set_active_deck(card_ids: Array) -> void:
     if sanitized.is_empty():
         _ensure_default_deck()
     else:
-        var decks := _profile.get(SECTION_DECKS, {})
+        var decks: Dictionary = _profile.get(SECTION_DECKS, {})
         decks["active"] = sanitized
         _profile[SECTION_DECKS] = decks
         _save_profile()
 
 static func clear_active_deck() -> void:
     ensure_initialized()
-    var decks := _profile.get(SECTION_DECKS, {})
+    var decks: Dictionary = _profile.get(SECTION_DECKS, {})
     decks.erase("active")
     _profile[SECTION_DECKS] = decks
     _save_profile()
@@ -139,7 +140,7 @@ static func apply_match_rewards(base_rewards: Dictionary) -> Dictionary:
     ensure_initialized()
     if base_rewards.is_empty():
         return {}
-    var summary := {}
+    var summary: Dictionary = {}
     var coins := int(base_rewards.get("coins", 0))
     if coins > 0:
         add_coins(coins)
@@ -147,7 +148,7 @@ static func apply_match_rewards(base_rewards: Dictionary) -> Dictionary:
     var packs := int(base_rewards.get("card_packs", 0))
     if packs > 0:
         summary["card_packs"] = packs
-        var acquired: Array = []
+        var acquired: Array[String] = []
         for _i in range(packs):
             var card := _draw_random_card()
             if card.is_empty():
@@ -165,7 +166,7 @@ static func apply_match_rewards(base_rewards: Dictionary) -> Dictionary:
 
 static func consume_tutorial(flag: String) -> bool:
     ensure_initialized()
-    var tutorials := _profile.get(SECTION_TUTORIALS, {})
+    var tutorials: Dictionary = _profile.get(SECTION_TUTORIALS, {})
     if !tutorials.has(flag):
         return false
     if tutorials[flag] == false:
@@ -187,8 +188,8 @@ static func _load_or_create_profile() -> Dictionary:
     return _deserialize_profile(config)
 
 static func _build_default_profile() -> Dictionary:
-    var inventory := {}
-    var starter_deck: Array = []
+    var inventory: Dictionary = {}
+    var starter_deck: Array[String] = []
     var default_cards := _repository.load_default_player_deck()
     for card in default_cards:
         var card_id := _get_card_id(card)
@@ -251,12 +252,12 @@ static func _save_profile() -> void:
         push_warning("PlayerProfile: Unable to save profile (%s)" % err)
 
 static func _ensure_default_deck() -> Array:
-    var decks := _profile.get(SECTION_DECKS, {})
+    var decks: Dictionary = _profile.get(SECTION_DECKS, {})
     var active: Array = decks.get("active", [])
     if !active.is_empty():
         return _repository.get_cards_by_ids(active)
     var defaults := _repository.load_default_player_deck()
-    var deck_ids: Array = []
+    var deck_ids: Array[String] = []
     for card in defaults:
         var card_id := _get_card_id(card)
         if card_id == "":
@@ -271,7 +272,7 @@ static func _draw_random_card() -> Dictionary:
     var all_cards := _repository.get_all_cards()
     if all_cards.is_empty():
         return {}
-    var weighted: Array = []
+    var weighted: Array[Dictionary] = []
     var total_weight := 0
     for card in all_cards:
         var rarity := String(card.get("rarity", "common")).to_lower()

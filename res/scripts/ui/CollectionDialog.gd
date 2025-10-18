@@ -2,14 +2,14 @@ extends AcceptDialog
 class_name CollectionDialog
 
 const CardListItemScene := preload("res://scenes/ui/CardListItem.tscn")
-const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
+const PlayerProfile := preload("res://res/scripts/PlayerProfile.gd")
 
 @onready var _rarity_filter: OptionButton = $MarginContainer/VBoxContainer/Controls/RarityFilter
 @onready var _total_label: Label = $MarginContainer/VBoxContainer/Controls/TotalLabel
 @onready var _card_list: VBoxContainer = $MarginContainer/VBoxContainer/Scroll/CardListContainer/CardList
 @onready var _empty_label: Label = $MarginContainer/VBoxContainer/Scroll/CardListContainer/EmptyLabel
 
-var _cards: Array = []
+var _cards: Array[Dictionary] = []
 
 func _ready() -> void:
     window_title = "Card Collection"
@@ -21,7 +21,7 @@ func _ready() -> void:
 func refresh() -> void:
     PlayerProfile.ensure_initialized()
     _cards = PlayerProfile.get_owned_cards()
-    _cards.sort_custom(self, "_sort_cards")
+    _cards.sort_custom(Callable(self, "_sort_cards"))
     _build_rarity_filter()
     _refresh_list()
 
@@ -92,4 +92,3 @@ func _get_selected_rarity() -> String:
     if metadata == null:
         return ""
     return String(metadata)
-*** End

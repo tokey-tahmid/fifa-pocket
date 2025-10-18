@@ -6,7 +6,7 @@ func _init() -> void:
     energy_cost = 2
 
 func apply(self_card: Dictionary, opponent_card: Dictionary) -> Dictionary:
-    var structure_bonus := clamp(int(self_card.get("defense", 0) / 10), 1, 5)
+    var structure_bonus: int = clampi(int(self_card.get("defense", 0) / 10), 1, 5)
     return {
         "self_modifiers": {
             "defense": structure_bonus + 6,

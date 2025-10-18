@@ -1,8 +1,8 @@
 extends Control
 
-const DeckManager := preload("res://scripts/DeckManager.gd")
-const AIBrain := preload("res://scripts/AIBrain.gd")
-const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
+const DeckManager := preload("res://res/scripts/DeckManager.gd")
+const AIBrain := preload("res://res/scripts/AIBrain.gd")
+const PlayerProfile := preload("res://res/scripts/PlayerProfile.gd")
 const HandCardScene := preload("res://scenes/ui/HandCard.tscn")
 
 ## Orchestrates the full life cycle of a match including the draw, tactic
@@ -91,7 +91,7 @@ func _ready() -> void:
         ai_debug_logging = _ai_brain.debug_enabled
     _phase_timer.timeout.connect(_on_phase_timer_timeout)
     _announcement_timer.timeout.connect(_on_announcement_timer_timeout)
-    size_changed.connect(_on_match_resized)
+    resized.connect(_on_match_resized)
     _load_tactics()
     _prepare_default_decks()
     _on_match_resized()
@@ -749,7 +749,7 @@ func _trigger_player_card_feedback(index: int) -> void:
 func _trigger_goal_celebration(player_delta: int, opponent_delta: int) -> void:
     if player_delta == opponent_delta:
         return
-    var emitter: GPUParticles2D = player_delta > opponent_delta ? _goal_burst : _opponent_burst
+    var emitter: GPUParticles2D = _goal_burst if player_delta > opponent_delta else _opponent_burst
     if emitter:
         emitter.restart()
         emitter.emitting = true

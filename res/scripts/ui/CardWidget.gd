@@ -33,7 +33,7 @@ func _ready() -> void:
     set_card({})
     _update_interactive_state()
     pivot_offset = size * 0.5
-    size_changed.connect(_on_size_changed)
+    resized.connect(_on_size_changed)
 
 func set_card(card_data: Dictionary) -> void:
     _card_data = card_data.duplicate(true)
@@ -87,15 +87,15 @@ func set_interactive(value: bool) -> void:
 func _update_interactive_state() -> void:
     if interactive:
         mouse_filter = Control.MOUSE_FILTER_STOP
-        if !is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
+        if !mouse_entered.is_connected(_on_mouse_entered):
             mouse_entered.connect(_on_mouse_entered)
-        if !is_connected("mouse_exited", Callable(self, "_on_mouse_exited")):
+        if !mouse_exited.is_connected(_on_mouse_exited):
             mouse_exited.connect(_on_mouse_exited)
     else:
         mouse_filter = Control.MOUSE_FILTER_IGNORE
-        if is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
+        if mouse_entered.is_connected(_on_mouse_entered):
             mouse_entered.disconnect(_on_mouse_entered)
-        if is_connected("mouse_exited", Callable(self, "_on_mouse_exited")):
+        if mouse_exited.is_connected(_on_mouse_exited):
             mouse_exited.disconnect(_on_mouse_exited)
 
 func _apply_empty_state() -> void:
@@ -188,7 +188,7 @@ func _can_animate() -> bool:
 func _gui_input(event: InputEvent) -> void:
     if !interactive:
         return
-    if event is InputEventMouseButton and event.button_index == MouseButton.LEFT and event.pressed and event.double_click:
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
         flip()
 
 func _on_mouse_entered() -> void:

@@ -39,9 +39,9 @@ func _format_rewards(rewards: Dictionary) -> String:
         return "No rewards this time."
     var lines: Array = []
     for key in rewards.keys():
-        var value := rewards[key]
+        var value: Variant = rewards[key]
         if value is Array:
-            var names: Array = []
+            var names: Array[String] = []
             for entry in value:
                 names.append(String(entry))
             lines.append("%s: %s" % [_beautify_label(String(key)), ", ".join(names)])

@@ -88,18 +88,19 @@ func choose_play(
         log.append("No cards available to play")
         return {"index": -1, "tactic": null, "log": log}
 
-    var candidates: Array = []
+    var candidates: Array[Dictionary] = []
     var best_candidate: Dictionary = {}
 
     for i in range(hand.size()):
-        var card := hand[i]
+        var card: Dictionary = hand[i]
         var base_score := float(evaluate_callable.call(card, null, opponent_card))
         var candidate := _build_candidate(i, card, null, 0, base_score, safe_energy, max_energy)
         log.append(_format_candidate_log(candidate))
         candidates.append(candidate)
         best_candidate = _better_candidate(best_candidate, candidate)
 
-        for tactic in tactics:
+        for tactic_value in tactics:
+            var tactic: Tactic = tactic_value
             if tactic == null:
                 continue
             var energy_cost := int(tactic.energy_cost)
@@ -168,7 +169,7 @@ func _build_candidate(
     }
 
 func _format_candidate_log(candidate: Dictionary) -> String:
-    var card := candidate.get("card", {})
+    var card: Dictionary = candidate.get("card", {})
     var tactic: Tactic = candidate.get("tactic", null)
     var tactic_name := tactic.tactic_name if tactic else "Balanced Play"
     return "  %s with %s -> base %.2f adj %.2f (off %.2f, energy %.2f, conserve %.2f)" % [
@@ -188,13 +189,13 @@ func _better_candidate(current: Dictionary, candidate: Dictionary) -> Dictionary
         return candidate
     return current
 
-func _apply_randomness(candidates: Array, best_candidate: Dictionary, log: Array) -> Dictionary:
+func _apply_randomness(candidates: Array[Dictionary], best_candidate: Dictionary, log: Array[String]) -> Dictionary:
     if randomness <= 0.0 or candidates.size() <= 1:
         log.append("Randomness disabled; using optimal choice")
         return best_candidate
 
-    var sorted := candidates.duplicate()
-    sorted.sort_custom(self, "_sort_candidates")
+    var sorted: Array[Dictionary] = candidates.duplicate()
+    sorted.sort_custom(Callable(self, "_sort_candidates"))
     var roll := _rng.randf()
     if roll >= randomness:
         log.append("Random roll %.2f kept optimal choice" % roll)
@@ -202,7 +203,7 @@ func _apply_randomness(candidates: Array, best_candidate: Dictionary, log: Array
 
     var limit := min(3, sorted.size())
     var pick_index := _rng.randi_range(0, limit - 1)
-    var chosen := sorted[pick_index]
+    var chosen: Dictionary = sorted[pick_index]
     log.append("Random roll %.2f selected alternative #%d (score %.2f)" % [roll, pick_index + 1, chosen.get("score", 0.0)])
     return chosen
 

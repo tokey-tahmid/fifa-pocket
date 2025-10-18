@@ -4,7 +4,7 @@ signal card_selected(card_index: int, tactic: Tactic)
 
 var _card_index: int = -1
 var _card_data: Dictionary = {}
-var _tactics: Array = []
+var _tactics: Array[Tactic] = []
 var _current_energy: int = 0
 var _is_selected: bool = false
 var _scale_tween: Tween = null
@@ -19,7 +19,9 @@ var _scale_tween: Tween = null
 func set_card(card_index: int, card_data: Dictionary, tactics: Array, current_energy: int) -> void:
     _card_index = card_index
     _card_data = card_data.duplicate(true)
-    _tactics = tactics.duplicate()
+    _tactics.clear()
+    for tactic_value in tactics:
+        _tactics.append(tactic_value)
     if _tactics.is_empty():
         _tactics.append(null)
     _card_widget.set_card(_card_data)
@@ -35,7 +37,7 @@ func update_energy(current_energy: int) -> void:
 func set_selected(selected: bool) -> void:
     var changed := _is_selected != selected
     _is_selected = selected
-    self_modulate = selected ? Color(0.85, 1.0, 0.9, 1.0) : Color(1, 1, 1, 1)
+    self_modulate = Color(0.85, 1.0, 0.9, 1.0) if selected else Color(1, 1, 1, 1)
     _card_widget.set_selected(selected)
     if changed:
         _animate_selection(selected)
@@ -52,7 +54,7 @@ func _populate_tactics() -> void:
             label = "%s (%d EN)" % [tactic.tactic_name, tactic.energy_cost]
             tooltip = tactic.description
         _tactic_selector.add_item(label, i)
-        _tactic_selector.set_item_tooltip(i, tooltip)
+        _tactic_selector.set_item_tooltip_text(i, tooltip)
     _tactic_selector.select(0)
     _status_label.text = ""
 
@@ -80,7 +82,7 @@ func _update_play_state() -> void:
     var affordable := cost <= _current_energy
     _play_button.disabled = !affordable
     if affordable:
-        _status_label.text = _is_selected ? "Selected" : ""
+        _status_label.text = "Selected" if _is_selected else ""
     else:
         _status_label.text = "Need %d EN" % cost
 
@@ -96,10 +98,10 @@ func play_selection_feedback() -> void:
 func _animate_selection(selected: bool) -> void:
     if _scale_tween and _scale_tween.is_running():
         _scale_tween.kill()
-    var target_scale := selected ? Vector2(1.04, 1.04) : Vector2.ONE
+    var target_scale := Vector2(1.04, 1.04) if selected else Vector2.ONE
     _scale_tween = create_tween()
     _scale_tween.set_trans(Tween.TRANS_QUAD)
-    _scale_tween.set_ease(selected ? Tween.EASE_OUT : Tween.EASE_IN)
-    _scale_tween.tween_property(self, "scale", target_scale, selected ? 0.25 : 0.2)
+    _scale_tween.set_ease(Tween.EASE_OUT if selected else Tween.EASE_IN)
+    _scale_tween.tween_property(self, "scale", target_scale, 0.25 if selected else 0.2)
     if selected:
         _scale_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3).set_delay(0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

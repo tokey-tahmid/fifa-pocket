@@ -50,9 +50,9 @@ func _get_drag_data(_position: Vector2):
     }
 
 func _gui_input(event: InputEvent) -> void:
-    if event is InputEventMouseButton and event.button_index == MouseButton.RIGHT and event.pressed:
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
         clear_requested.emit(slot_index)
-    elif event is InputEventMouseButton and event.button_index == MouseButton.LEFT and event.pressed and event.double_click:
+    elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
         if _card_widget:
             _card_widget.flip()
 

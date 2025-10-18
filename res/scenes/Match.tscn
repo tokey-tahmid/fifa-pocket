@@ -35,6 +35,8 @@ offset_top = 32.0
 offset_right = -32.0
 offset_bottom = -32.0
 alignment = 1
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="PhaseAnnouncement" type="Label" parent="UI/HUD"]
 custom_minimum_size = Vector2(0, 80)
@@ -63,6 +65,59 @@ text = "Round 1"
 size_flags_horizontal = 3
 horizontal_alignment = 1
 text = "Opponent 0"
+
+[node name="PlayerInfo" type="HBoxContainer" parent="UI/HUD"]
+custom_minimum_size = Vector2(0, 32)
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="PlayerEnergy" type="Label" parent="UI/HUD/PlayerInfo"]
+size_flags_horizontal = 3
+horizontal_alignment = 1
+text = "Energy 0/0"
+
+[node name="OpponentEnergy" type="Label" parent="UI/HUD/PlayerInfo"]
+size_flags_horizontal = 3
+horizontal_alignment = 1
+text = "Opponent Energy 0/0"
+
+[node name="Hands" type="HBoxContainer" parent="UI/HUD"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="PlayerHandPanel" type="VBoxContainer" parent="UI/HUD/Hands"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(320, 0)
+
+[node name="PlayerHandLabel" type="Label" parent="UI/HUD/Hands/PlayerHandPanel"]
+text = "Player Hand"
+horizontal_alignment = 1
+
+[node name="PlayerHandScroll" type="ScrollContainer" parent="UI/HUD/Hands/PlayerHandPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical_scroll_mode = 1
+
+[node name="PlayerHandList" type="VBoxContainer" parent="UI/HUD/Hands/PlayerHandPanel/PlayerHandScroll"]
+size_flags_horizontal = 3
+size_flags_vertical = 1
+alignment = 1
+
+[node name="OpponentHandPanel" type="VBoxContainer" parent="UI/HUD/Hands"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(320, 0)
+
+[node name="OpponentHandLabel" type="Label" parent="UI/HUD/Hands/OpponentHandPanel"]
+text = "Opponent Hand"
+horizontal_alignment = 1
+
+[node name="OpponentHandList" type="VBoxContainer" parent="UI/HUD/Hands/OpponentHandPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
 
 [node name="SummaryPanel" type="Panel" parent="UI/HUD"]
 visible = false

@@ -1,0 +1,85 @@
+extends PanelContainer
+
+signal card_selected(card_index: int, tactic: Tactic)
+
+var _card_index: int = -1
+var _card_data: Dictionary = {}
+var _tactics: Array = []
+var _current_energy: int = 0
+var _is_selected: bool = false
+
+@onready var _name_label: Label = $VBoxContainer/NameLabel
+@onready var _stats_label: Label = $VBoxContainer/StatsLabel
+@onready var _tactic_selector: OptionButton = $VBoxContainer/TacticSelector
+@onready var _status_label: Label = $VBoxContainer/StatusLabel
+@onready var _play_button: Button = $VBoxContainer/PlayButton
+
+func set_card(card_index: int, card_data: Dictionary, tactics: Array, current_energy: int) -> void:
+    _card_index = card_index
+    _card_data = card_data.duplicate(true)
+    _tactics = tactics.duplicate()
+    if _tactics.is_empty():
+        _tactics.append(null)
+    _name_label.text = _card_data.get("name", "Unknown")
+    _stats_label.text = "ATK %d  DEF %d  PAC %d  CTRL %d" % [
+        int(_card_data.get("attack", 0)),
+        int(_card_data.get("defense", 0)),
+        int(_card_data.get("pace", 0)),
+        int(_card_data.get("control", 0))
+    ]
+    _populate_tactics()
+    set_selected(false)
+    update_energy(current_energy)
+
+func update_energy(current_energy: int) -> void:
+    _current_energy = current_energy
+    _update_play_state()
+
+func set_selected(selected: bool) -> void:
+    _is_selected = selected
+    self_modulate = selected ? Color(0.8, 1.0, 0.8, 1.0) : Color(1, 1, 1, 1)
+
+func _populate_tactics() -> void:
+    _tactic_selector.clear()
+    for i in range(_tactics.size()):
+        var tactic: Tactic = _tactics[i]
+        var label := "Balanced Play (0 EN)"
+        var tooltip := "Stick to the player's natural strengths."
+        if tactic:
+            label = "%s (%d EN)" % [tactic.tactic_name, tactic.energy_cost]
+            tooltip = tactic.description
+        _tactic_selector.add_item(label, i)
+        _tactic_selector.set_item_tooltip(i, tooltip)
+    _tactic_selector.select(0)
+    _status_label.text = ""
+
+func _get_selected_tactic() -> Tactic:
+    if _tactics.is_empty():
+        return null
+    var selected := _tactic_selector.get_selected_id()
+    if selected < 0 or selected >= _tactics.size():
+        selected = 0
+    return _tactics[selected]
+
+func _on_PlayButton_pressed() -> void:
+    var tactic := _get_selected_tactic()
+    if tactic and tactic.energy_cost > _current_energy:
+        _status_label.text = "Need %d EN" % tactic.energy_cost
+        return
+    emit_signal("card_selected", _card_index, tactic)
+
+func _on_TacticSelector_item_selected(_index: int) -> void:
+    _update_play_state()
+
+func _update_play_state() -> void:
+    var tactic := _get_selected_tactic()
+    var cost := tactic.energy_cost if tactic else 0
+    var affordable := cost <= _current_energy
+    _play_button.disabled = !affordable
+    if affordable:
+        _status_label.text = _is_selected ? "Selected" : ""
+    else:
+        _status_label.text = "Need %d EN" % cost
+
+func get_card_index() -> int:
+    return _card_index

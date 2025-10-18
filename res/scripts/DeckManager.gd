@@ -2,6 +2,7 @@ extends RefCounted
 class_name DeckManager
 
 const CARD_REPOSITORY := preload("res://scripts/CardRepository.gd")
+const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
 
 static var _repository: CardRepository = CARD_REPOSITORY.new()
 static var _player_deck: Array = []
@@ -9,10 +10,21 @@ static var _opponent_deck: Array = []
 
 static func set_selected_deck(deck: Array) -> void:
     _player_deck = _sanitize_deck(deck)
+    var card_ids: Array = []
+    for card in _player_deck:
+        var card_id := card.get("id", card.get("name", ""))
+        if String(card_id) == "":
+            continue
+        card_ids.append(String(card_id))
+    PlayerProfile.set_active_deck(card_ids)
 
 static func get_player_deck() -> Array:
     if _player_deck.is_empty():
-        _player_deck = _repository.load_default_player_deck()
+        PlayerProfile.ensure_initialized()
+        var stored := PlayerProfile.get_active_deck_cards()
+        if stored.is_empty():
+            stored = _repository.load_default_player_deck()
+        _player_deck = _sanitize_deck(stored)
     return _duplicate_deck(_player_deck)
 
 static func get_default_player_deck() -> Array:
@@ -28,6 +40,7 @@ static func set_opponent_deck(deck: Array) -> void:
 
 static func clear_player_deck() -> void:
     _player_deck.clear()
+    PlayerProfile.clear_active_deck()
 
 static func is_valid_deck(deck: Array, required_size: int) -> bool:
     if deck.size() != required_size:

@@ -40,7 +40,13 @@ func _format_rewards(rewards: Dictionary) -> String:
     var lines: Array = []
     for key in rewards.keys():
         var value := rewards[key]
-        lines.append("%s: %s" % [_beautify_label(String(key)), str(value)])
+        if value is Array:
+            var names: Array = []
+            for entry in value:
+                names.append(String(entry))
+            lines.append("%s: %s" % [_beautify_label(String(key)), ", ".join(names)])
+        else:
+            lines.append("%s: %s" % [_beautify_label(String(key)), str(value)])
     lines.sort()
     return "\n".join(lines)
 

@@ -2,6 +2,7 @@ extends Control
 
 const DeckManager := preload("res://scripts/DeckManager.gd")
 const AIBrain := preload("res://scripts/AIBrain.gd")
+const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
 const HandCardScene := preload("res://scenes/ui/HandCard.tscn")
 
 ## Orchestrates the full life cycle of a match including the draw, tactic
@@ -78,6 +79,7 @@ func _ready() -> void:
     _rng.randomize()
     AIBrain.register_project_settings()
     _ai_brain = AIBrain.new()
+    PlayerProfile.ensure_initialized()
     if ai_debug_logging:
         _ai_brain.debug_enabled = true
     else:
@@ -87,6 +89,7 @@ func _ready() -> void:
     _load_tactics()
     _prepare_default_decks()
     start_match()
+    _show_match_tutorial_if_needed()
 
 func start_match() -> void:
     _current_phase = Phase.DRAW
@@ -696,4 +699,9 @@ func _calculate_rewards() -> Dictionary:
     var majority := int((total_rounds + 1) / 2)
     if _player_score > _opponent_score and _player_rounds_won >= majority:
         rewards["card_packs"] = 1
-    return rewards
+    return PlayerProfile.apply_match_rewards(rewards)
+
+func _show_match_tutorial_if_needed() -> void:
+    if PlayerProfile.consume_tutorial("match_flow"):
+        _summary_label.text = "[center][b]Match Tips[/b][/center]\nSelect a card from your hand and pair it with a tactic before the timer expires. Win rounds to earn coins and card rewards!"
+        _summary_panel.visible = true

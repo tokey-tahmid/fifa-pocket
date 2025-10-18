@@ -8,11 +8,11 @@ var _tactics: Array = []
 var _current_energy: int = 0
 var _is_selected: bool = false
 
-@onready var _name_label: Label = $VBoxContainer/NameLabel
-@onready var _stats_label: Label = $VBoxContainer/StatsLabel
-@onready var _tactic_selector: OptionButton = $VBoxContainer/TacticSelector
-@onready var _status_label: Label = $VBoxContainer/StatusLabel
-@onready var _play_button: Button = $VBoxContainer/PlayButton
+@onready var _card_widget: CardWidget = $HBoxContainer/CardDisplay
+@onready var _tactic_selector: OptionButton = $HBoxContainer/ControlPanel/TacticSelector
+@onready var _status_label: Label = $HBoxContainer/ControlPanel/StatusLabel
+@onready var _play_button: Button = $HBoxContainer/ControlPanel/PlayButton
+@onready var _energy_hint: Label = $HBoxContainer/ControlPanel/EnergyHint
 
 func set_card(card_index: int, card_data: Dictionary, tactics: Array, current_energy: int) -> void:
     _card_index = card_index
@@ -20,24 +20,20 @@ func set_card(card_index: int, card_data: Dictionary, tactics: Array, current_en
     _tactics = tactics.duplicate()
     if _tactics.is_empty():
         _tactics.append(null)
-    _name_label.text = _card_data.get("name", "Unknown")
-    _stats_label.text = "ATK %d  DEF %d  PAC %d  CTRL %d" % [
-        int(_card_data.get("attack", 0)),
-        int(_card_data.get("defense", 0)),
-        int(_card_data.get("pace", 0)),
-        int(_card_data.get("control", 0))
-    ]
+    _card_widget.set_card(_card_data)
     _populate_tactics()
     set_selected(false)
     update_energy(current_energy)
 
 func update_energy(current_energy: int) -> void:
     _current_energy = current_energy
+    _energy_hint.text = "Available energy: %d" % _current_energy
     _update_play_state()
 
 func set_selected(selected: bool) -> void:
     _is_selected = selected
-    self_modulate = selected ? Color(0.8, 1.0, 0.8, 1.0) : Color(1, 1, 1, 1)
+    self_modulate = selected ? Color(0.85, 1.0, 0.9, 1.0) : Color(1, 1, 1, 1)
+    _card_widget.set_selected(selected)
 
 func _populate_tactics() -> void:
     _tactic_selector.clear()

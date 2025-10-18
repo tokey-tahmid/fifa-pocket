@@ -1,5 +1,7 @@
 extends Control
 
+const DeckManager := preload("res://scripts/DeckManager.gd")
+
 ## Orchestrates the full life cycle of a match including the draw, tactic
 ## selection, resolution and cleanup phases. A simple state machine drives the
 ## timers and UI so the match can run in a deterministic loop without extra
@@ -60,21 +62,9 @@ func start_match() -> void:
 
 func _prepare_default_decks() -> void:
     if _player_deck.is_empty():
-        _player_deck = [
-            {"name": "Clinical Striker", "attack": 88, "defense": 30, "pace": 86, "control": 80},
-            {"name": "Box To Box", "attack": 78, "defense": 72, "pace": 79, "control": 82},
-            {"name": "Creative Winger", "attack": 82, "defense": 40, "pace": 90, "control": 85},
-            {"name": "Anchor Man", "attack": 65, "defense": 88, "pace": 68, "control": 74},
-            {"name": "Sweeper Keeper", "attack": 50, "defense": 92, "pace": 60, "control": 77}
-        ]
+        _player_deck = DeckManager.get_player_deck()
     if _opponent_deck.is_empty():
-        _opponent_deck = [
-            {"name": "Target Forward", "attack": 84, "defense": 36, "pace": 72, "control": 78},
-            {"name": "Regista", "attack": 75, "defense": 70, "pace": 74, "control": 90},
-            {"name": "Wing Back", "attack": 70, "defense": 76, "pace": 88, "control": 72},
-            {"name": "Destroyer", "attack": 60, "defense": 91, "pace": 65, "control": 68},
-            {"name": "Shot Stopper", "attack": 48, "defense": 94, "pace": 58, "control": 70}
-        ]
+        _opponent_deck = DeckManager.get_opponent_deck()
 
 func _start_phase(phase: Phase) -> void:
     _current_phase = phase

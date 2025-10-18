@@ -7,12 +7,14 @@ var _card_data: Dictionary = {}
 var _tactics: Array = []
 var _current_energy: int = 0
 var _is_selected: bool = false
+var _scale_tween: Tween = null
 
 @onready var _card_widget: CardWidget = $HBoxContainer/CardDisplay
 @onready var _tactic_selector: OptionButton = $HBoxContainer/ControlPanel/TacticSelector
 @onready var _status_label: Label = $HBoxContainer/ControlPanel/StatusLabel
 @onready var _play_button: Button = $HBoxContainer/ControlPanel/PlayButton
 @onready var _energy_hint: Label = $HBoxContainer/ControlPanel/EnergyHint
+@onready var _selection_particles: GPUParticles2D = $SelectionBurst
 
 func set_card(card_index: int, card_data: Dictionary, tactics: Array, current_energy: int) -> void:
     _card_index = card_index
@@ -31,9 +33,14 @@ func update_energy(current_energy: int) -> void:
     _update_play_state()
 
 func set_selected(selected: bool) -> void:
+    var changed := _is_selected != selected
     _is_selected = selected
     self_modulate = selected ? Color(0.85, 1.0, 0.9, 1.0) : Color(1, 1, 1, 1)
     _card_widget.set_selected(selected)
+    if changed:
+        _animate_selection(selected)
+    if selected and _status_label.text == "":
+        _status_label.text = "Selected"
 
 func _populate_tactics() -> void:
     _tactic_selector.clear()
@@ -79,3 +86,20 @@ func _update_play_state() -> void:
 
 func get_card_index() -> int:
     return _card_index
+
+func play_selection_feedback() -> void:
+    _animate_selection(true)
+    if _selection_particles:
+        _selection_particles.restart()
+        _selection_particles.emitting = true
+
+func _animate_selection(selected: bool) -> void:
+    if _scale_tween and _scale_tween.is_running():
+        _scale_tween.kill()
+    var target_scale := selected ? Vector2(1.04, 1.04) : Vector2.ONE
+    _scale_tween = create_tween()
+    _scale_tween.set_trans(Tween.TRANS_QUAD)
+    _scale_tween.set_ease(selected ? Tween.EASE_OUT : Tween.EASE_IN)
+    _scale_tween.tween_property(self, "scale", target_scale, selected ? 0.25 : 0.2)
+    if selected:
+        _scale_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.3).set_delay(0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

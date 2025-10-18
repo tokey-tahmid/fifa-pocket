@@ -1,0 +1,141 @@
+[gd_resource type="Resource" format=3]
+
+[resource]
+cards = [
+    {
+        "id": "clinical_striker",
+        "name": "Clinical Striker",
+        "position": "ST",
+        "rarity": "Epic",
+        "club": "Metro City",
+        "nation": "England",
+        "attack": 91,
+        "defense": 34,
+        "pace": 88,
+        "control": 83
+    },
+    {
+        "id": "box_to_box",
+        "name": "Box To Box",
+        "position": "CM",
+        "rarity": "Rare",
+        "club": "Capital United",
+        "nation": "France",
+        "attack": 80,
+        "defense": 78,
+        "pace": 82,
+        "control": 85
+    },
+    {
+        "id": "creative_winger",
+        "name": "Creative Winger",
+        "position": "RW",
+        "rarity": "Rare",
+        "club": "Seaside CF",
+        "nation": "Brazil",
+        "attack": 86,
+        "defense": 40,
+        "pace": 94,
+        "control": 90
+    },
+    {
+        "id": "anchor_man",
+        "name": "Anchor Man",
+        "position": "CDM",
+        "rarity": "Uncommon",
+        "club": "Northbridge",
+        "nation": "Germany",
+        "attack": 68,
+        "defense": 90,
+        "pace": 70,
+        "control": 76
+    },
+    {
+        "id": "sweeper_keeper",
+        "name": "Sweeper Keeper",
+        "position": "GK",
+        "rarity": "Rare",
+        "club": "Harbor City",
+        "nation": "Spain",
+        "attack": 55,
+        "defense": 95,
+        "pace": 64,
+        "control": 78
+    },
+    {
+        "id": "target_forward",
+        "name": "Target Forward",
+        "position": "ST",
+        "rarity": "Uncommon",
+        "club": "Old Town",
+        "nation": "Belgium",
+        "attack": 85,
+        "defense": 38,
+        "pace": 76,
+        "control": 80
+    },
+    {
+        "id": "regista",
+        "name": "Regista",
+        "position": "CM",
+        "rarity": "Epic",
+        "club": "Riverside",
+        "nation": "Italy",
+        "attack": 78,
+        "defense": 74,
+        "pace": 75,
+        "control": 94
+    },
+    {
+        "id": "wing_back",
+        "name": "Wing Back",
+        "position": "RWB",
+        "rarity": "Uncommon",
+        "club": "Capital United",
+        "nation": "Canada",
+        "attack": 72,
+        "defense": 80,
+        "pace": 92,
+        "control": 74
+    },
+    {
+        "id": "destroyer",
+        "name": "Destroyer",
+        "position": "CB",
+        "rarity": "Rare",
+        "club": "Metro City",
+        "nation": "Uruguay",
+        "attack": 62,
+        "defense": 94,
+        "pace": 68,
+        "control": 70
+    },
+    {
+        "id": "shot_stopper",
+        "name": "Shot Stopper",
+        "position": "GK",
+        "rarity": "Uncommon",
+        "club": "Old Town",
+        "nation": "USA",
+        "attack": 50,
+        "defense": 96,
+        "pace": 60,
+        "control": 72
+    }
+]
+
+default_player_deck = [
+    "clinical_striker",
+    "box_to_box",
+    "creative_winger",
+    "anchor_man",
+    "sweeper_keeper"
+]
+
+default_opponent_deck = [
+    "target_forward",
+    "regista",
+    "wing_back",
+    "destroyer",
+    "shot_stopper"
+]

@@ -1,0 +1,85 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/DeckBuilder.gd" id="1"]
+
+[node name="DeckBuilder" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+script = ExtResource("1")
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 0)
+
+[node name="Title" type="Label" parent="MainLayout"]
+text = "Deck Builder"
+custom_minimum_size = Vector2(0, 48)
+horizontal_alignment = 1
+
+[node name="Content" type="HBoxContainer" parent="MainLayout"]
+size_flags_vertical = 3
+
+[node name="CardLibrary" type="VBoxContainer" parent="MainLayout/Content"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(320, 0)
+
+[node name="LibraryTitle" type="Label" parent="MainLayout/Content/CardLibrary"]
+text = "Available Cards"
+custom_minimum_size = Vector2(0, 32)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MainLayout/Content/CardLibrary"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+vertical_scroll_mode = 1
+
+[node name="CardList" type="VBoxContainer" parent="MainLayout/Content/CardLibrary/ScrollContainer"]
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 0)
+
+[node name="DeckPanel" type="VBoxContainer" parent="MainLayout/Content"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(320, 0)
+
+[node name="DeckTitle" type="Label" parent="MainLayout/Content/DeckPanel"]
+text = "Selected Squad"
+custom_minimum_size = Vector2(0, 32)
+horizontal_alignment = 1
+
+[node name="DeckGrid" type="GridContainer" parent="MainLayout/Content/DeckPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 5
+custom_minimum_size = Vector2(0, 300)
+
+[node name="ErrorLabel" type="Label" parent="MainLayout/Content/DeckPanel"]
+visible = false
+text = "Deck status"
+custom_minimum_size = Vector2(0, 32)
+horizontal_alignment = 1
+self_modulate = Color(1, 0.2, 0.2, 1)
+
+[node name="Footer" type="HBoxContainer" parent="MainLayout"]
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 48)
+alignment = 1
+
+[node name="ClearButton" type="Button" parent="MainLayout/Footer"]
+text = "Clear"
+
+[node name="SaveButton" type="Button" parent="MainLayout/Footer"]
+text = "Save Deck"

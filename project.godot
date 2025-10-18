@@ -1,0 +1,10 @@
+; Engine configuration file.
+; It is best edited using the Godot editor.
+
+[application]
+config/name="fifa-pocket"
+
+[fifa-pocket/ai]
+aggressiveness=0.65
+randomness=0.2
+debug_logging=false

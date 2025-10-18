@@ -1,6 +1,7 @@
 extends Control
 
 const DeckManager := preload("res://scripts/DeckManager.gd")
+const AIBrain := preload("res://scripts/AIBrain.gd")
 const HandCardScene := preload("res://scenes/ui/HandCard.tscn")
 
 ## Orchestrates the full life cycle of a match including the draw, tactic
@@ -25,6 +26,7 @@ enum Phase {
 @export var player_energy_max: int = 6
 @export var opponent_energy_max: int = 6
 @export var energy_refresh_per_round: int = 3
+@export var ai_debug_logging: bool = false
 
 @onready var _phase_timer: Timer = $PhaseTimer
 @onready var _announcement_timer: Timer = $AnnouncementTimer
@@ -57,9 +59,16 @@ var _player_energy: int = 0
 var _opponent_energy: int = 0
 var _available_tactics: Array = []
 var _rng := RandomNumberGenerator.new()
+var _ai_brain: AIBrain = null
 
 func _ready() -> void:
     _rng.randomize()
+    AIBrain.register_project_settings()
+    _ai_brain = AIBrain.new()
+    if ai_debug_logging:
+        _ai_brain.debug_enabled = true
+    else:
+        ai_debug_logging = _ai_brain.debug_enabled
     _phase_timer.timeout.connect(_on_phase_timer_timeout)
     _announcement_timer.timeout.connect(_on_announcement_timer_timeout)
     _load_tactics()
@@ -147,6 +156,7 @@ func _begin_draw_phase() -> void:
 func _begin_tactic_phase() -> void:
     _announce_phase("Tactic Selection")
     _phase_timer.start(tactic_duration)
+    _select_ai_tactic()
 
 func _begin_resolution_phase() -> void:
     _announce_phase("Resolution")
@@ -227,8 +237,7 @@ func player_choose_card(index: int, tactic: Tactic = null) -> void:
         return
     if !_set_player_selection(index, tactic):
         return
-    if _opponent_selected_card.is_empty():
-        _select_ai_tactic()
+    _select_ai_tactic()
     if auto_resolve_on_timeout:
         _phase_timer.stop()
         _advance_phase()
@@ -252,34 +261,76 @@ func _set_player_selection(index: int, tactic: Tactic) -> bool:
     return true
 
 func _select_ai_tactic() -> Dictionary:
+    if _ai_brain == null:
+        return {}
     if _opponent_hand.is_empty():
         _opponent_selected_card = {}
         _opponent_selected_tactic = null
         _opponent_selected_card_index = -1
         return {}
 
-    var available_energy := min(opponent_energy_max, _opponent_energy + (_opponent_selected_tactic.energy_cost if _opponent_selected_tactic else 0))
-    var best_index := 0
-    var best_tactic: Tactic = null
-    var best_score := -INF
+    var previous_cost := _opponent_selected_tactic.energy_cost if _opponent_selected_tactic else 0
+    var available_energy := min(opponent_energy_max, _opponent_energy + previous_cost)
+    var had_previous := _opponent_selected_card_index >= 0
+    var decision := _ai_brain.choose_play(
+        _opponent_hand,
+        available_energy,
+        opponent_energy_max,
+        _available_tactics,
+        Callable(self, "_evaluate_option"),
+        _player_selected_card,
+        {
+            "current_index": _opponent_selected_card_index,
+            "previous_tactic": _opponent_selected_tactic,
+            "round": _current_round,
+            "phase": _current_phase,
+            "player_selection": _player_selected_card
+        }
+    )
+    _log_ai_decision(decision)
 
-    for i in range(_opponent_hand.size()):
-        var card := _opponent_hand[i]
-        var baseline := _evaluate_option(card, null, _player_selected_card)
-        if baseline > best_score:
-            best_score = baseline
-            best_index = i
-            best_tactic = null
-        for tactic in _available_tactics:
-            if tactic.energy_cost > available_energy:
-                continue
-            var value := _evaluate_option(card, tactic, _player_selected_card)
-            if value > best_score:
-                best_score = value
-                best_index = i
-                best_tactic = tactic
-    _set_opponent_selection(best_index, best_tactic)
+    var index := int(decision.get("index", -1))
+    var tactic: Tactic = decision.get("tactic", null)
+
+    if !_set_opponent_selection(index, tactic):
+        if tactic and _set_opponent_selection(index, null):
+            if ai_debug_logging:
+                var card_name := _opponent_hand[index].get("name", "Opponent Card") if index >= 0 and index < _opponent_hand.size() else "Opponent Card"
+                print("[AI] Fallback to balanced play for %s due to energy limits" % card_name)
+        elif index >= 0 and index < _opponent_hand.size():
+            if !_set_opponent_selection(index, null) and !had_previous:
+                _clear_opponent_selection()
+        elif !had_previous:
+            _clear_opponent_selection()
     return _opponent_selected_card
+
+func _clear_opponent_selection() -> void:
+    _opponent_selected_card = {}
+    _opponent_selected_tactic = null
+    _opponent_selected_card_index = -1
+    _update_opponent_hand_ui()
+    _update_energy_display()
+
+func _log_ai_decision(decision: Dictionary) -> void:
+    if !ai_debug_logging or decision.is_empty():
+        return
+    var phase_names := Phase.keys()
+    var phase_name := String(_current_phase)
+    if _current_phase >= 0 and _current_phase < phase_names.size():
+        phase_name = String(phase_names[_current_phase])
+    var header := "[AI] Decision for round %d phase %s" % [_current_round, phase_name]
+    print(header)
+    var log_lines: Array = decision.get("log", [])
+    for line in log_lines:
+        print("[AI]   %s" % line)
+    var chosen_index := int(decision.get("index", -1))
+    if chosen_index >= 0 and chosen_index < _opponent_hand.size():
+        var card := _opponent_hand[chosen_index]
+        var tactic: Tactic = decision.get("tactic", null)
+        var tactic_name := tactic.tactic_name if tactic else "Balanced Play"
+        print("[AI] -> Selected %s with %s" % [card.get("name", "Opponent Card"), tactic_name])
+    else:
+        print("[AI] -> No valid selection")
 
 func _set_opponent_selection(index: int, tactic: Tactic) -> bool:
     if index < 0 or index >= _opponent_hand.size():
@@ -299,8 +350,7 @@ func _set_opponent_selection(index: int, tactic: Tactic) -> bool:
 func _ensure_tactics_selected() -> void:
     if (_player_selected_card.is_empty() or _player_selected_card_index < 0) and !_player_hand.is_empty():
         _auto_select_player_option()
-    if _opponent_selected_card.is_empty() or _opponent_selected_card_index < 0:
-        _select_ai_tactic()
+    _select_ai_tactic()
 
 func _auto_select_player_option() -> void:
     if _player_hand.is_empty():
@@ -326,8 +376,7 @@ func _auto_select_player_option() -> void:
                 best_index = i
                 best_tactic = tactic
     _set_player_selection(best_index, best_tactic)
-    if _opponent_selected_card.is_empty():
-        _select_ai_tactic()
+    _select_ai_tactic()
 
 func _calculate_round_result(player_card: Dictionary, opponent_card: Dictionary, player_tactic: Tactic, opponent_tactic: Tactic) -> Dictionary:
     var safe_player := player_card if !player_card.is_empty() else _empty_card("No Play")

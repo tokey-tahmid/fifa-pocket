@@ -8,7 +8,13 @@ var card_data: Dictionary = {}
 func set_card(data: Dictionary) -> void:
     card_data = data.duplicate(true)
     _name_label.text = card_data.get("name", "Unknown")
-    _meta_label.text = "%s | %s" % [card_data.get("position", "--"), card_data.get("rarity", "Common")]
+    var meta_parts: Array = []
+    meta_parts.append(card_data.get("position", "--"))
+    meta_parts.append(card_data.get("rarity", "Common"))
+    var owned := int(card_data.get("owned_copies", 1))
+    if owned > 1:
+        meta_parts.append("x%d" % owned)
+    _meta_label.text = " | ".join(meta_parts)
 
 func _get_drag_data(_position: Vector2):
     if card_data.is_empty():

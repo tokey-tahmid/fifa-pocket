@@ -4,6 +4,7 @@ const CARD_LIST_ITEM := preload("res://scenes/ui/CardListItem.tscn")
 const DECK_SLOT_SCENE := preload("res://scenes/ui/DeckSlot.tscn")
 const DeckManager := preload("res://scripts/DeckManager.gd")
 const CardRepository := preload("res://scripts/CardRepository.gd")
+const PlayerProfile := preload("res://scripts/PlayerProfile.gd")
 
 @export var squad_size: int = 5
 
@@ -26,6 +27,12 @@ const SUCCESS_COLOR := Color(0.4, 0.85, 0.5)
 @onready var _overview_pace: Label = $MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid/PaceValue
 @onready var _overview_control: Label = $MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid/ControlValue
 @onready var _overview_rarity: Label = $MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid/RarityValue
+@onready var _currency_label: Label = $MainLayout/PlayerInfo/CurrencyLabel
+@onready var _collection_button: Button = $MainLayout/PlayerInfo/CollectionButton
+@onready var _collection_dialog: CollectionDialog = $CollectionDialog
+@onready var _tutorial_banner: PanelContainer = $TutorialBanner
+@onready var _tutorial_text: RichTextLabel = $TutorialBanner/HBoxContainer/TutorialText
+@onready var _tutorial_dismiss: Button = $TutorialBanner/HBoxContainer/DismissButton
 
 var _repository := CardRepository.new()
 var _deck_slots: Array = []
@@ -35,16 +42,21 @@ var _all_cards: Array = []
 const FILTER_ALL := "__all__"
 
 func _ready() -> void:
+    PlayerProfile.ensure_initialized()
     _build_deck_grid()
     _populate_card_list()
     _load_existing_deck()
     _refresh_validation()
+    _update_currency_display()
+    _show_tutorial_banner_if_needed()
     _save_button.pressed.connect(_on_save_pressed)
     _clear_button.pressed.connect(_on_clear_pressed)
     _search_line.text_changed.connect(_on_search_changed)
     _position_filter.item_selected.connect(_on_filter_changed)
     _rarity_filter.item_selected.connect(_on_filter_changed)
     _reset_filters_button.pressed.connect(_on_reset_filters)
+    _collection_button.pressed.connect(_on_collection_button_pressed)
+    _tutorial_dismiss.pressed.connect(_on_tutorial_dismissed)
 
 func _build_deck_grid() -> void:
     _deck_slots.clear()
@@ -62,7 +74,9 @@ func _build_deck_grid() -> void:
 func _populate_card_list() -> void:
     for child in _card_list.get_children():
         child.queue_free()
-    _all_cards = _repository.get_all_cards()
+    _all_cards = PlayerProfile.get_owned_cards()
+    if _all_cards.is_empty():
+        _all_cards = _repository.get_all_cards()
     _all_cards.sort_custom(self, "_sort_cards")
     _build_filter_options()
     for card in _filter_cards():
@@ -256,8 +270,12 @@ func _matches_search(card: Dictionary, query: String) -> bool:
     return false
 
 func _update_library_count() -> void:
-    var count := _card_list.get_child_count()
-    _library_count.text = "%d result%s" % [count, count == 1 ? "" : "s"]
+    var unique := _card_list.get_child_count()
+    var total_cards := 0
+    for card in _filter_cards():
+        total_cards += int(card.get("owned_copies", 1))
+    var suffix := unique == 1 ? "" : "s"
+    _library_count.text = "%d card%s (%d owned)" % [unique, suffix, total_cards]
 
 func _update_squad_overview() -> void:
     var filled := 0
@@ -304,3 +322,22 @@ func _format_average(total: int, count: int) -> String:
     if count <= 0:
         return "--"
     return "%.1f" % (float(total) / float(count))
+
+func _update_currency_display() -> void:
+    _currency_label.text = "Coins: %d" % PlayerProfile.get_coin_balance()
+
+func _on_collection_button_pressed() -> void:
+    if _collection_dialog:
+        _update_currency_display()
+        _collection_dialog.refresh()
+        _collection_dialog.popup_centered_ratio(0.8)
+
+func _show_tutorial_banner_if_needed() -> void:
+    if PlayerProfile.consume_tutorial("deck_builder"):
+        _tutorial_text.text = "[b]Welcome to your club![/b]\nDrag cards from the library into the squad grid to build your starter deck. Use the filters to focus on positions or rarities."
+        _tutorial_banner.visible = true
+    else:
+        _tutorial_banner.visible = false
+
+func _on_tutorial_dismissed() -> void:
+    _tutorial_banner.visible = false

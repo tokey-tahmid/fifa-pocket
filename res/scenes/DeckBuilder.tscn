@@ -29,17 +29,52 @@ text = "Deck Builder"
 custom_minimum_size = Vector2(0, 48)
 horizontal_alignment = 1
 
+[node name="ControlsBar" type="HBoxContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 40)
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="SearchLine" type="LineEdit" parent="MainLayout/ControlsBar"]
+placeholder_text = "Search by name, club or nation"
+size_flags_horizontal = 3
+
+[node name="PositionFilter" type="OptionButton" parent="MainLayout/ControlsBar"]
+text = "All Positions"
+size_flags_horizontal = 2
+
+[node name="RarityFilter" type="OptionButton" parent="MainLayout/ControlsBar"]
+text = "All Rarities"
+size_flags_horizontal = 2
+
+[node name="ResetFilters" type="Button" parent="MainLayout/ControlsBar"]
+text = "Reset"
+size_flags_horizontal = 1
+
 [node name="Content" type="HBoxContainer" parent="MainLayout"]
 size_flags_vertical = 3
+size_flags_horizontal = 3
 
 [node name="CardLibrary" type="VBoxContainer" parent="MainLayout/Content"]
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(360, 0)
 
-[node name="LibraryTitle" type="Label" parent="MainLayout/Content/CardLibrary"]
-text = "Available Cards"
+[node name="LibraryHeader" type="HBoxContainer" parent="MainLayout/Content/CardLibrary"]
 custom_minimum_size = Vector2(0, 32)
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="LibraryTitle" type="Label" parent="MainLayout/Content/CardLibrary/LibraryHeader"]
+text = "Available Cards"
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="LibraryCount" type="Label" parent="MainLayout/Content/CardLibrary/LibraryHeader"]
+text = "0 results"
+custom_minimum_size = Vector2(0, 24)
+size_flags_horizontal = 2
+horizontal_alignment = 2
+self_modulate = Color(0.8, 0.8, 0.8, 1)
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MainLayout/Content/CardLibrary"]
 size_flags_horizontal = 3
@@ -53,12 +88,86 @@ custom_minimum_size = Vector2(0, 0)
 [node name="DeckPanel" type="VBoxContainer" parent="MainLayout/Content"]
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(360, 0)
 
 [node name="DeckTitle" type="Label" parent="MainLayout/Content/DeckPanel"]
 text = "Selected Squad"
 custom_minimum_size = Vector2(0, 32)
 horizontal_alignment = 1
+
+[node name="OverviewPanel" type="PanelContainer" parent="MainLayout/Content/DeckPanel"]
+custom_minimum_size = Vector2(0, 140)
+size_flags_horizontal = 3
+
+[node name="OverviewVBox" type="VBoxContainer" parent="MainLayout/Content/DeckPanel/OverviewPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="OverviewHeader" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox"]
+text = "Squad Overview"
+custom_minimum_size = Vector2(0, 28)
+horizontal_alignment = 1
+
+[node name="OverviewGrid" type="GridContainer" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox"]
+columns = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CountLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Cards"
+
+[node name="CountValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "0/0"
+horizontal_alignment = 2
+size_flags_horizontal = 2
+
+[node name="AttackLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Avg Attack"
+
+[node name="AttackValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "0"
+horizontal_alignment = 2
+size_flags_horizontal = 2
+
+[node name="DefenseLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Avg Defense"
+
+[node name="DefenseValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "0"
+horizontal_alignment = 2
+size_flags_horizontal = 2
+
+[node name="PaceLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Avg Pace"
+
+[node name="PaceValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "0"
+horizontal_alignment = 2
+size_flags_horizontal = 2
+
+[node name="ControlLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Avg Control"
+
+[node name="ControlValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "0"
+horizontal_alignment = 2
+size_flags_horizontal = 2
+
+[node name="RarityLabel" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "Rarity Spread"
+
+[node name="RarityValue" type="Label" parent="MainLayout/Content/DeckPanel/OverviewPanel/OverviewVBox/OverviewGrid"]
+text = "--"
+horizontal_alignment = 2
+size_flags_horizontal = 2
 
 [node name="DeckGrid" type="GridContainer" parent="MainLayout/Content/DeckPanel"]
 size_flags_horizontal = 3
@@ -83,3 +192,4 @@ text = "Clear"
 
 [node name="SaveButton" type="Button" parent="MainLayout/Footer"]
 text = "Save Deck"
+

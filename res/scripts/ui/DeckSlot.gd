@@ -7,25 +7,25 @@ signal clear_requested(slot_index)
 
 var card_data: Dictionary = {}
 
-@onready var _name_label: Label = $VBoxContainer/CardName
-@onready var _stat_label: Label = $VBoxContainer/CardStats
+@onready var _card_widget: CardWidget = $VBoxContainer/CardDisplay
+@onready var _hint_label: Label = $VBoxContainer/Hint
 
 func _ready() -> void:
+    mouse_entered.connect(_on_mouse_entered)
+    mouse_exited.connect(_on_mouse_exited)
+    if _card_widget:
+        _card_widget.set_interactive(false)
     set_card(card_data)
 
 func set_card(data: Dictionary) -> void:
     card_data = data.duplicate(true)
-    if card_data.is_empty():
-        _name_label.text = "Empty Slot"
-        _stat_label.text = "Drag a card here"
-    else:
-        _name_label.text = card_data.get("name", "Unknown")
-        _stat_label.text = "ATK %d  DEF %d  PAC %d  CTRL %d" % [
-            int(card_data.get("attack", 0)),
-            int(card_data.get("defense", 0)),
-            int(card_data.get("pace", 0)),
-            int(card_data.get("control", 0))
-        ]
+    if _card_widget:
+        _card_widget.set_card(card_data)
+    if _hint_label:
+        if card_data.is_empty():
+            _hint_label.text = "Drag a card here"
+        else:
+            _hint_label.text = "Double click to flip • Right click to clear"
 
 func clear_card() -> void:
     set_card({})
@@ -52,3 +52,14 @@ func _get_drag_data(_position: Vector2):
 func _gui_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.button_index == MouseButton.RIGHT and event.pressed:
         clear_requested.emit(slot_index)
+    elif event is InputEventMouseButton and event.button_index == MouseButton.LEFT and event.pressed and event.double_click:
+        if _card_widget:
+            _card_widget.flip()
+
+func _on_mouse_entered() -> void:
+    if _card_widget:
+        _card_widget.trigger_hover(true)
+
+func _on_mouse_exited() -> void:
+    if _card_widget:
+        _card_widget.trigger_hover(false)

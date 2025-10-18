@@ -30,16 +30,20 @@ enum Phase {
 
 @onready var _phase_timer: Timer = $PhaseTimer
 @onready var _announcement_timer: Timer = $AnnouncementTimer
-@onready var _announcement_label: Label = $UI/HUD/PhaseAnnouncement
-@onready var _player_score_label: Label = $UI/HUD/Scoreboard/PlayerScore
-@onready var _opponent_score_label: Label = $UI/HUD/Scoreboard/OpponentScore
-@onready var _round_label: Label = $UI/HUD/Scoreboard/RoundLabel
-@onready var _player_energy_label: Label = $UI/HUD/PlayerInfo/PlayerEnergy
-@onready var _opponent_energy_label: Label = $UI/HUD/PlayerInfo/OpponentEnergy
-@onready var _player_hand_list: VBoxContainer = $UI/HUD/Hands/PlayerHandPanel/PlayerHandScroll/PlayerHandList
-@onready var _opponent_hand_list: VBoxContainer = $UI/HUD/Hands/OpponentHandPanel/OpponentHandList
-@onready var _summary_panel: Panel = $UI/HUD/SummaryPanel
-@onready var _summary_label: RichTextLabel = $UI/HUD/SummaryPanel/SummaryLabel
+@onready var _announcement_label: Label = $UI/PhaseAnnouncement
+@onready var _phase_label: Label = $UI/HUD/MainVBox/TopBar/PhasePanel/PhaseLabel
+@onready var _player_score_label: Label = $UI/HUD/MainVBox/TopBar/PlayerPanel/PlayerScore
+@onready var _opponent_score_label: Label = $UI/HUD/MainVBox/TopBar/OpponentPanel/OpponentScore
+@onready var _round_label: Label = $UI/HUD/MainVBox/TopBar/PhasePanel/RoundLabel
+@onready var _player_energy_bar: ProgressBar = $UI/HUD/MainVBox/EnergyPanel/PlayerEnergyBox/PlayerEnergyBar
+@onready var _player_energy_text: Label = $UI/HUD/MainVBox/EnergyPanel/PlayerEnergyBox/PlayerEnergyText
+@onready var _opponent_energy_bar: ProgressBar = $UI/HUD/MainVBox/EnergyPanel/OpponentEnergyBox/OpponentEnergyBar
+@onready var _opponent_energy_text: Label = $UI/HUD/MainVBox/EnergyPanel/OpponentEnergyBox/OpponentEnergyText
+@onready var _player_hand_list: HBoxContainer = $UI/HUD/MainVBox/HandsContainer/PlayerHandPanel/PlayerHandScroll/PlayerHandList
+@onready var _opponent_hand_list: VBoxContainer = $UI/HUD/MainVBox/HandsContainer/OpponentHandPanel/OpponentHandList
+@onready var _summary_panel: Panel = $UI/HUD/MainVBox/SummaryPanel
+@onready var _summary_label: RichTextLabel = $UI/HUD/MainVBox/SummaryPanel/SummaryLabel
+@onready var _match_end_dialog: MatchEndDialog = $UI/MatchEndDialog
 
 var _current_phase: Phase = Phase.DRAW
 var _current_round: int = 1
@@ -60,6 +64,15 @@ var _opponent_energy: int = 0
 var _available_tactics: Array = []
 var _rng := RandomNumberGenerator.new()
 var _ai_brain: AIBrain = null
+var _player_rounds_won: int = 0
+var _opponent_rounds_won: int = 0
+var _player_cards_played: int = 0
+var _opponent_cards_played: int = 0
+var _player_tactics_used: int = 0
+var _opponent_tactics_used: int = 0
+var _player_energy_spent_total: float = 0.0
+var _opponent_energy_spent_total: float = 0.0
+var _rounds_played: int = 0
 
 func _ready() -> void:
     _rng.randomize()
@@ -82,6 +95,15 @@ func start_match() -> void:
     _opponent_score = 0
     _player_energy = player_energy_max
     _opponent_energy = opponent_energy_max
+    _player_rounds_won = 0
+    _opponent_rounds_won = 0
+    _player_cards_played = 0
+    _opponent_cards_played = 0
+    _player_tactics_used = 0
+    _opponent_tactics_used = 0
+    _player_energy_spent_total = 0
+    _opponent_energy_spent_total = 0
+    _rounds_played = 0
     _player_selected_card_index = -1
     _opponent_selected_card_index = -1
     _player_selected_tactic = null
@@ -93,6 +115,9 @@ func start_match() -> void:
     _clear_hand_ui()
     _update_scoreboard()
     _update_energy_display()
+    _update_phase_label("Draw Phase")
+    if _match_end_dialog:
+        _match_end_dialog.hide()
     _start_phase(Phase.DRAW)
 
 func _prepare_default_decks() -> void:
@@ -171,6 +196,7 @@ func _begin_resolution_phase() -> void:
     _update_scoreboard()
     _summary_label.text = result["summary"]
     _summary_panel.visible = true
+    _record_round_stats(result)
     _phase_timer.start(resolution_duration)
 
 func _begin_cleanup_phase() -> void:
@@ -198,6 +224,7 @@ func _complete_match() -> void:
     _summary_label.text = summary
     _summary_panel.visible = true
     _announce_phase("Match Complete")
+    _show_match_end_dialog(verdict)
 
 func _advance_phase() -> void:
     match _current_phase:
@@ -469,13 +496,17 @@ func _score_card(card: Dictionary) -> float:
     return attack * 1.1 + defense * 0.9 + pace * 0.7 + control * 0.5
 
 func _update_scoreboard() -> void:
-    _player_score_label.text = "Player %d" % _player_score
-    _opponent_score_label.text = "Opponent %d" % _opponent_score
-    _round_label.text = "Round %d" % _current_round
+    _player_score_label.text = str(_player_score)
+    _opponent_score_label.text = str(_opponent_score)
+    _round_label.text = "Round %d / %d" % [_current_round, total_rounds]
 
 func _update_energy_display() -> void:
-    _player_energy_label.text = "Energy %d/%d" % [_player_energy, player_energy_max]
-    _opponent_energy_label.text = "Opponent Energy %d/%d" % [_opponent_energy, opponent_energy_max]
+    _player_energy_bar.max_value = player_energy_max
+    _player_energy_bar.value = _player_energy
+    _player_energy_text.text = "%d/%d" % [_player_energy, player_energy_max]
+    _opponent_energy_bar.max_value = opponent_energy_max
+    _opponent_energy_bar.value = _opponent_energy
+    _opponent_energy_text.text = "%d/%d" % [_opponent_energy, opponent_energy_max]
 
 func _refresh_energy_pools() -> void:
     if _current_round == 1:
@@ -495,6 +526,7 @@ func _build_player_hand_ui() -> void:
         options.insert(0, null)
         hand_card.set_card(i, card, options, _player_energy)
         hand_card.card_selected.connect(_on_player_card_selected)
+        hand_card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
         _player_hand_list.add_child(hand_card)
 
 func _build_opponent_hand_ui() -> void:
@@ -505,6 +537,7 @@ func _build_opponent_hand_ui() -> void:
         label.text = base_text
         label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         label.set_meta("base_text", base_text)
+        label.add_theme_color_override("font_color", Color(0.9, 0.85, 0.85))
         _opponent_hand_list.add_child(label)
 
 func _clear_hand_ui() -> void:
@@ -537,7 +570,7 @@ func _update_opponent_hand_ui() -> void:
             label.self_modulate = Color(1, 0.85, 0.85, 1)
         else:
             label.text = base_text
-            label.self_modulate = Color(1, 1, 1, 1)
+            label.self_modulate = Color(0.9, 0.85, 0.85, 1)
 
 func _resolve_tactic_effect(tactic: Tactic, self_card: Dictionary, opponent_card: Dictionary) -> Dictionary:
     if tactic == null:
@@ -600,6 +633,10 @@ func _announce_phase(text: String) -> void:
     var fade_in := create_tween()
     fade_in.tween_property(_announcement_label, "modulate:a", 1.0, 0.35).set_ease(Tween.EASE_OUT)
     _announcement_timer.start(1.5)
+    _update_phase_label(text)
+
+func _update_phase_label(text: String) -> void:
+    _phase_label.text = text
 
 func _on_phase_timer_timeout() -> void:
     if _current_phase == Phase.COMPLETE:
@@ -611,3 +648,52 @@ func _on_phase_timer_timeout() -> void:
 func _on_announcement_timer_timeout() -> void:
     var fade_out := create_tween()
     fade_out.tween_property(_announcement_label, "modulate:a", 0.0, 0.35).set_ease(Tween.EASE_IN)
+
+func _record_round_stats(result: Dictionary) -> void:
+    _rounds_played += 1
+    var player_delta := int(result.get("player_score", 0))
+    var opponent_delta := int(result.get("opponent_score", 0))
+    if player_delta > opponent_delta:
+        _player_rounds_won += 1
+    elif opponent_delta > player_delta:
+        _opponent_rounds_won += 1
+    if !_player_selected_card.is_empty():
+        _player_cards_played += 1
+    if !_opponent_selected_card.is_empty():
+        _opponent_cards_played += 1
+    if _player_selected_tactic:
+        _player_tactics_used += 1
+        _player_energy_spent_total += _player_selected_tactic.energy_cost
+    if _opponent_selected_tactic:
+        _opponent_tactics_used += 1
+        _opponent_energy_spent_total += _opponent_selected_tactic.energy_cost
+
+func _show_match_end_dialog(verdict: String) -> void:
+    if _match_end_dialog == null:
+        return
+    var rewards := _calculate_rewards()
+    _match_end_dialog.show_summary({
+        "player_score": _player_score,
+        "opponent_score": _opponent_score,
+        "rounds_played": _rounds_played,
+        "player_rounds_won": _player_rounds_won,
+        "opponent_rounds_won": _opponent_rounds_won,
+        "player_cards_played": _player_cards_played,
+        "opponent_cards_played": _opponent_cards_played,
+        "player_tactics_used": _player_tactics_used,
+        "opponent_tactics_used": _opponent_tactics_used,
+        "player_energy_spent": _player_energy_spent_total,
+        "opponent_energy_spent": _opponent_energy_spent_total,
+        "verdict": verdict,
+        "rewards": rewards
+    })
+
+func _calculate_rewards() -> Dictionary:
+    var rewards := {}
+    var base_coins := max(0, _player_score - _opponent_score) * 25 + _player_rounds_won * 10
+    if base_coins > 0:
+        rewards["coins"] = base_coins
+    var majority := int((total_rounds + 1) / 2)
+    if _player_score > _opponent_score and _player_rounds_won >= majority:
+        rewards["card_packs"] = 1
+    return rewards

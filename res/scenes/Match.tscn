@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/MatchController.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MatchEndDialog.tscn" id="2"]
 
 [node name="Match" type="Control"]
 layout_mode = 3
@@ -26,7 +27,21 @@ autostart = false
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="HUD" type="VBoxContainer" parent="UI"]
+[node name="PhaseAnnouncement" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_right = 200.0
+offset_top = 24.0
+custom_minimum_size = Vector2(0, 60)
+vertical_alignment = 1
+horizontal_alignment = 1
+text = ""
+theme_type_variation = "AnnouncementLabel"
+modulate = Color(1, 1, 1, 0)
+
+[node name="HUD" type="MarginContainer" parent="UI"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -34,97 +49,111 @@ offset_left = 32.0
 offset_top = 32.0
 offset_right = -32.0
 offset_bottom = -32.0
-alignment = 1
+
+[node name="MainVBox" type="VBoxContainer" parent="UI/HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 0)
 
-[node name="PhaseAnnouncement" type="Label" parent="UI/HUD"]
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD/MainVBox"]
 custom_minimum_size = Vector2(0, 80)
-vertical_alignment = 1
-horizontal_alignment = 1
-text = ""
-theme_type_variation = "AnnouncementLabel"
-modulate = Color(1, 1, 1, 0)
-
-[node name="Scoreboard" type="HBoxContainer" parent="UI/HUD"]
-custom_minimum_size = Vector2(0, 64)
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="PlayerScore" type="Label" parent="UI/HUD/Scoreboard"]
+[node name="PlayerPanel" type="VBoxContainer" parent="UI/HUD/MainVBox/TopBar"]
 size_flags_horizontal = 3
-horizontal_alignment = 1
-text = "Player 0"
+alignment = 1
 
-[node name="RoundLabel" type="Label" parent="UI/HUD/Scoreboard"]
-size_flags_horizontal = 3
+[node name="PlayerName" type="Label" parent="UI/HUD/MainVBox/TopBar/PlayerPanel"]
+text = "Player"
 horizontal_alignment = 1
+custom_minimum_size = Vector2(0, 24)
+
+[node name="PlayerScore" type="Label" parent="UI/HUD/MainVBox/TopBar/PlayerPanel"]
+text = "0"
+horizontal_alignment = 1
+custom_minimum_size = Vector2(0, 36)
+
+[node name="PhasePanel" type="VBoxContainer" parent="UI/HUD/MainVBox/TopBar"]
+size_flags_horizontal = 2
+alignment = 1
+
+[node name="PhaseLabel" type="Label" parent="UI/HUD/MainVBox/TopBar/PhasePanel"]
+text = "Draw Phase"
+horizontal_alignment = 1
+custom_minimum_size = Vector2(0, 28)
+
+[node name="RoundLabel" type="Label" parent="UI/HUD/MainVBox/TopBar/PhasePanel"]
 text = "Round 1"
-
-[node name="OpponentScore" type="Label" parent="UI/HUD/Scoreboard"]
-size_flags_horizontal = 3
 horizontal_alignment = 1
-text = "Opponent 0"
+custom_minimum_size = Vector2(0, 24)
 
-[node name="PlayerInfo" type="HBoxContainer" parent="UI/HUD"]
-custom_minimum_size = Vector2(0, 32)
+[node name="OpponentPanel" type="VBoxContainer" parent="UI/HUD/MainVBox/TopBar"]
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="PlayerEnergy" type="Label" parent="UI/HUD/PlayerInfo"]
-size_flags_horizontal = 3
+[node name="OpponentName" type="Label" parent="UI/HUD/MainVBox/TopBar/OpponentPanel"]
+text = "Opponent"
 horizontal_alignment = 1
-text = "Energy 0/0"
+custom_minimum_size = Vector2(0, 24)
 
-[node name="OpponentEnergy" type="Label" parent="UI/HUD/PlayerInfo"]
-size_flags_horizontal = 3
+[node name="OpponentScore" type="Label" parent="UI/HUD/MainVBox/TopBar/OpponentPanel"]
+text = "0"
 horizontal_alignment = 1
-text = "Opponent Energy 0/0"
+custom_minimum_size = Vector2(0, 36)
 
-[node name="Hands" type="HBoxContainer" parent="UI/HUD"]
+[node name="EnergyPanel" type="HBoxContainer" parent="UI/HUD/MainVBox"]
+custom_minimum_size = Vector2(0, 120)
 size_flags_horizontal = 3
-size_flags_vertical = 3
 alignment = 1
 
-[node name="PlayerHandPanel" type="VBoxContainer" parent="UI/HUD/Hands"]
+[node name="PlayerEnergyBox" type="VBoxContainer" parent="UI/HUD/MainVBox/EnergyPanel"]
 size_flags_horizontal = 3
-size_flags_vertical = 3
-custom_minimum_size = Vector2(320, 0)
+alignment = 1
+custom_minimum_size = Vector2(0, 0)
 
-[node name="PlayerHandLabel" type="Label" parent="UI/HUD/Hands/PlayerHandPanel"]
-text = "Player Hand"
+[node name="PlayerEnergyLabel" type="Label" parent="UI/HUD/MainVBox/EnergyPanel/PlayerEnergyBox"]
+text = "Player Energy"
 horizontal_alignment = 1
 
-[node name="PlayerHandScroll" type="ScrollContainer" parent="UI/HUD/Hands/PlayerHandPanel"]
+[node name="PlayerEnergyBar" type="ProgressBar" parent="UI/HUD/MainVBox/EnergyPanel/PlayerEnergyBox"]
 size_flags_horizontal = 3
-size_flags_vertical = 3
-vertical_scroll_mode = 1
+max_value = 10.0
+value = 0.0
+show_percentage = false
 
-[node name="PlayerHandList" type="VBoxContainer" parent="UI/HUD/Hands/PlayerHandPanel/PlayerHandScroll"]
-size_flags_horizontal = 3
-size_flags_vertical = 1
-alignment = 1
-
-[node name="OpponentHandPanel" type="VBoxContainer" parent="UI/HUD/Hands"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-custom_minimum_size = Vector2(320, 0)
-
-[node name="OpponentHandLabel" type="Label" parent="UI/HUD/Hands/OpponentHandPanel"]
-text = "Opponent Hand"
+[node name="PlayerEnergyText" type="Label" parent="UI/HUD/MainVBox/EnergyPanel/PlayerEnergyBox"]
+text = "0/0"
 horizontal_alignment = 1
 
-[node name="OpponentHandList" type="VBoxContainer" parent="UI/HUD/Hands/OpponentHandPanel"]
+[node name="OpponentEnergyBox" type="VBoxContainer" parent="UI/HUD/MainVBox/EnergyPanel"]
 size_flags_horizontal = 3
-size_flags_vertical = 3
 alignment = 1
 
-[node name="SummaryPanel" type="Panel" parent="UI/HUD"]
+[node name="OpponentEnergyLabel" type="Label" parent="UI/HUD/MainVBox/EnergyPanel/OpponentEnergyBox"]
+text = "Opponent Energy"
+horizontal_alignment = 1
+
+[node name="OpponentEnergyBar" type="ProgressBar" parent="UI/HUD/MainVBox/EnergyPanel/OpponentEnergyBox"]
+size_flags_horizontal = 3
+max_value = 10.0
+value = 0.0
+show_percentage = false
+
+[node name="OpponentEnergyText" type="Label" parent="UI/HUD/MainVBox/EnergyPanel/OpponentEnergyBox"]
+text = "0/0"
+horizontal_alignment = 1
+
+[node name="SummaryPanel" type="PanelContainer" parent="UI/HUD/MainVBox"]
 visible = false
 size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_vertical = 2
+custom_minimum_size = Vector2(0, 140)
 
-[node name="SummaryLabel" type="RichTextLabel" parent="UI/HUD/SummaryPanel"]
+[node name="SummaryLabel" type="RichTextLabel" parent="UI/HUD/MainVBox/SummaryPanel"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -134,3 +163,50 @@ offset_right = -16.0
 offset_bottom = -16.0
 bbcode_enabled = true
 text = ""
+fit_content = true
+scroll_active = false
+
+[node name="HandsContainer" type="HBoxContainer" parent="UI/HUD/MainVBox"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 260)
+
+[node name="PlayerHandPanel" type="VBoxContainer" parent="UI/HUD/MainVBox/HandsContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(420, 0)
+
+[node name="PlayerHandLabel" type="Label" parent="UI/HUD/MainVBox/HandsContainer/PlayerHandPanel"]
+text = "Your Hand"
+horizontal_alignment = 1
+
+[node name="PlayerHandScroll" type="ScrollContainer" parent="UI/HUD/MainVBox/HandsContainer/PlayerHandPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 1
+
+[node name="PlayerHandList" type="HBoxContainer" parent="UI/HUD/MainVBox/HandsContainer/PlayerHandPanel/PlayerHandScroll"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 1
+alignment = 1
+custom_constants/separation = 16
+
+[node name="OpponentHandPanel" type="VBoxContainer" parent="UI/HUD/MainVBox/HandsContainer"]
+size_flags_horizontal = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(260, 0)
+
+[node name="OpponentHandLabel" type="Label" parent="UI/HUD/MainVBox/HandsContainer/OpponentHandPanel"]
+text = "Opponent Plays"
+horizontal_alignment = 1
+
+[node name="OpponentHandList" type="VBoxContainer" parent="UI/HUD/MainVBox/HandsContainer/OpponentHandPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+custom_constants/separation = 12
+
+[node name="MatchEndDialog" parent="UI" instance=ExtResource("2")]
+visible = false
+
